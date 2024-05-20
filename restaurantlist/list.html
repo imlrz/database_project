@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>餐馆信息展示</title>
+<style>
+  body { font-family: 'Arial', sans-serif; }
+  .restaurant { margin-bottom: 30px; }
+  .restaurant img { width: 50%; height: auto; }
+  .info { background-color: #f2f2f2; padding: 15px; }
+  .name { font-size: 24px; color: #333; }
+  .description { font-size: 16px; color: #666; }
+body {
+  margin: 0;
+}
+.sidebar {
+  margin: 0;
+  padding: 0;
+  width: 200px;
+  background-color: #f1f1f1;
+  position: fixed;
+  height: 100%;
+  overflow: auto;
+}
+.content {
+  margin-left: 200px;
+  padding: 1px 16px;
+  height: 1000px;
+}
+</style>
+</head>
+<body>
+<div class="sidebar">
+       <p> <a href="https://cn.tripadvisor.com/Restaurant_Review-g294220-d7203875-Reviews-JiangNan_Wok-Nanjing_Jiangsu.html">更多消息</a></p>
+       <p> <a href="#\n">更少消息</a></p>
+       <p> <a href="#\n">什么消息</a></p>
+        <!-- 更多链接 -->
+</div>
+<div class="content">
+<div class="restaurant">
+  <img src="images/1.jpg" alt="餐馆1">
+  <div class="info">
+    <div class="name">江南灶</div>
+    <div class="description">这里风景优美，如诗如画。</div>
+  </div>
+</div>
+
+<div class="restaurant">
+  <img src="images/2.jpg" alt="餐馆2">
+  <div class="info">
+    <div class="name">芬尼根酒吧</div>
+    <div class="description">江苏省 南京市 秦淮区中山南路400号熙南里街区6号
+    </div>
+  </div>
+</div>
+</div>
+<!-- 更多餐馆信息 -->
+</body>
+
