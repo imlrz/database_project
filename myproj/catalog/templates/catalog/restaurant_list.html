@@ -1,0 +1,17 @@
+{% extends "catalog/base_generic_cata.html" %}
+
+{% block content %}
+  <h1>Restaurants List</h1>
+
+  {% if restaurant_list %}
+    <ul>
+      {% for restaurant in restaurant_list %}
+        <li>
+          <a href="{{ restaurant.get_absolute_url }}">{{ restaurant.resta_name }}</a> ({{restaurant.location}})
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>There are no restaurants nearby.</p>
+  {% endif %}
+{% endblock %}

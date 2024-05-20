@@ -1,0 +1,11 @@
+{% extends "catalog/base_generic_cata.html" %}
+
+{% block content %}
+  <h1>Name: {{ restaurant.resta_name }}</h1>
+
+  <p><strong>Manager:</strong> <a href="">{{ restaurant.manager }}</a></p> <!-- author detail link not yet defined -->
+  <p><strong>Location:</strong> {{ restaurant.location }}</p>
+  <p><strong>Open Time:</strong> {{ restaurant.time_open }}</p>
+  <p><strong>Close Time:</strong> {{ restaurant.time_close }}</p>
+  <p><strong>Grade:</strong> {{ restaurant.AVG_grade }}</p>
+{% endblock %}
