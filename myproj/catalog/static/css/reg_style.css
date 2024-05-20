@@ -1,0 +1,50 @@
+body {
+    font-family: Roboto;
+    background-color: #e76f51c9;
+    color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login {
+    background-color: #f8f9fa;
+    width: 400px;
+    color: #0b132b;
+    padding: 40px;
+    box-shadow: 10px 10px 25px #00000080;
+    text-align: center;
+}
+
+.login input {
+    display: block;
+    margin: 20px auto;
+    text-align: center;
+    background: none;
+    padding: 12px;
+    font-size: 15px;
+    border-radius: 22px;
+    outline: none;
+    color: #0b132b;
+}
+.login input[type="username"], .login input[type="password"] {
+    border: 2px solid #3498db;
+    width: 220px;
+}
+
+.login input[type="submit"] {
+    width: 150px;
+    border: 2px solid #e76f51;
+    cursor: pointer;
+}
+
+.login input[type="username"]:focus, .login input[type="password"]:focus {
+    border-color: #e76f51;
+    width: 280px;
+    transition: 0.5s;
+}
+
+.login input[type="submit"]:hover {
+    background-color: #e76f51;
+    transition: 0.5s;
+}

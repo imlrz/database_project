@@ -1,0 +1,14 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="../../static/css/reg_style.css" />
+    </head>
+    <body>
+        <form action="{% url 'Registration' %}" method="post" enctype="multipart/form-data" class="login">
+            {% csrf_token %}
+            <h1>Register 注册</h1>
+            <input type="username" name="username" placeholder="Username 用户名" required />
+            <input type="password" name="password" placeholder="Password 密码" required />
+            <input type="submit" value="Submit 提交" />
+        </form>
+    </body>
+</html>
