@@ -1,0 +1,10 @@
+{% extends "catalog/base_generic_cata.html" %}
+
+{% block content %}
+  <h1>Name: {{ dish.dish_name }}</h1>
+  <img class="media-object" width="150" height="150" src='{{ dish.image.url }}' alt="">
+  <p><strong>Restaurant:</strong> <a href="{{ dish.resta_ID.get_absolute_url }}">{{ dish.resta_ID.resta_name }}</a></p> <!-- author detail link not yet defined -->
+  <p><strong>Tag:</strong> {{ dish.tag }}</p>
+  <p><strong>Price:</strong> {{ dish.price }}</p>
+  <p><strong>modre_Info:</strong> {{ dish.more_Info }}</p>
+{% endblock %}
