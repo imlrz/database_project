@@ -1,14 +1,14 @@
 from django.shortcuts import render
 
 # Create your views here.
-from .models import USER, RESTAURANT
+from .models import RESTAURANT, DISH
 
 def index(request):
     """
     View function for home page of site.
     """
     # Generate counts of some of the main objects
-    num_users=USER.objects.all().count()
+    num_users=0
     # Available books (status = 'a')
     num_restaurants=RESTAURANT.objects.count()  # The 'all()' is implied by default.
 
@@ -24,8 +24,14 @@ from django.views import generic
 class RestaurantListView(generic.ListView):
     model = RESTAURANT
 
+class DishListView(generic.ListView):
+    model = DISH
+
 class RestaurantDetailView(generic.DetailView):
     model = RESTAURANT
+
+class DishDetailView(generic.DetailView):
+    model = DISH
 
 # # 导入模块
 from django.shortcuts import render, redirect
