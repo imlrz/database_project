@@ -8,7 +8,7 @@ from django.conf import settings
 class RESTAURANT(models.Model):
     resta_ID = models.AutoField(primary_key = True)
     resta_name = models.CharField(max_length = 20, unique = True)
-    location_choice = (('W', 'West Campus'), ('E', 'East Campus'), ('O', 'Other places'))
+    location_choice = (('W', 'West Campus'), ('E', 'East Campus'), ('O', 'Other places'),('J','Jinzhai Road'),('H','Huangshan Road'))
     location = models.CharField(max_length = 1, choices = location_choice, default = 'O')
     time_open = models.TimeField(blank = True, null = True)
     time_close = models.TimeField(blank = True, null = True)
@@ -74,7 +74,7 @@ class COMMENT(models.Model):
 class REPLY(models.Model):
     reply_ID = models.AutoField(primary_key = True)
     user_ID = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
-    comm_ID = models.ForeignKey(COMMENT, models.CASCADE)
+    comm_ID = models.ForeignKey(COMMENT, related_name = 'replies', on_delete = models.CASCADE)
     content = models.CharField(max_length = 200)
     
     def __str__(self):

@@ -1,17 +1,42 @@
 {% extends "catalog/base_generic_cata.html" %}
 
 {% block content %}
-  <h1>Restaurants List</h1>
+  <h1>HELLO!</h1>
 
-  {% if restaurant_list %}
-    <ul>
-      {% for restaurant in restaurant_list %}
-        <li>
-          <a href="{{ restaurant.get_absolute_url }}">{{ restaurant.resta_name }}</a> ({{restaurant.location}})
-        </li>
+  <form method="GET">
+      <label for="searchway">查询方式</label>
+      <select id="searchway" name="searchway">
+        <option value="R">按照餐馆进行查询</option>
+        <option value="D">按照食品进行查询</option>
+      </select>
+
+      <label for="name">名称:</label>
+      <input type="text" id="name" name="name">
+
+      <button type="submit">Search</button>
+  </form>
+
+  <ul>
+      {% for searchresult in searchresults %}
+        {% if searchresult.resta_name %}
+          <li>
+            <a href="{{ searchresult.get_absolute_url }}">{{ searchresult.resta_name }}</a> ({{ searchresult.location }})
+          </li>
+          <img src="{{ searchresult.image.url }}" alt="{{ searchresult.resta_name }}" style="max-width: 200px; max-height: 200px;">
+        {% elif searchresult.dish_name %}
+          <li>
+            <a href="{{ searchresult.get_absolute_url }}">{{ searchresult.dish_name }}</a>
+          </li>
+          <img src="{{ searchresult.image.url }}" alt="{{ searchresult.dish_name }}" style="max-width: 200px; max-height: 200px;">
+        {% endif %}
       {% endfor %}
-    </ul>
-  {% else %}
-    <p>There are no restaurants nearby.</p>
-  {% endif %}
+  </ul>
+  <a href="{% url 'addrestaurant' %}">添加餐厅</a>
+
 {% endblock %}
+
+
+
+
+
+
