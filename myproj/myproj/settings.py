@@ -81,9 +81,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'testproj',
         'USER': 'root',
-        'PASSWORD': 'LiRuiZhe2005',
+        'PASSWORD': '123456',
         'HOST': '127.0.0.1',
-        'PORT': 3306,
+        'PORT': '3306',
     }
 }
 
@@ -134,4 +134,5 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Redirect to home URL after login (Default redirects to /accounts/profile/)
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/catalog/restaurants/'
+

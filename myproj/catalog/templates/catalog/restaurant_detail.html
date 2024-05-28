@@ -2,7 +2,7 @@
 
 {% block content %}
   <h1>Name: {{ restaurant.resta_name }}</h1>
-  <img class="media-object" width="150" height="150" src='{{ restaurant.image.url }}' alt="">
+  <img class="media-object" src='{{ restaurant.image.url }}' alt="" style="max-width: 200px; max-height: 200px;">
   <p><strong>Manager:</strong> {{ restaurant.manager }}</a></p> <!-- author detail link not yet defined -->
   <p><strong>Location:</strong> {{ restaurant.location }}</p>
   <p><strong>Open Time:</strong> {{ restaurant.time_open }}</p>

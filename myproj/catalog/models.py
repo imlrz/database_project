@@ -8,7 +8,7 @@ from django.conf import settings
 class RESTAURANT(models.Model):
     resta_ID = models.AutoField(primary_key = True)
     resta_name = models.CharField(max_length = 20, unique = True)
-    location_choice = (('W', 'West Campus'), ('E', 'East Campus'), ('O', 'Other places'))
+    location_choice = (('W', 'West Campus'), ('E', 'East Campus'), ('O', 'Other places'),('J','Jinzhai Road'),('H','Huangshan Road'))
     location = models.CharField(max_length = 1, choices = location_choice, default = 'O')
     time_open = models.TimeField(blank = True, null = True)
     time_close = models.TimeField(blank = True, null = True)
@@ -34,7 +34,6 @@ class DISH(models.Model):
     dish_ID = models.AutoField(primary_key = True)
     resta_ID = models.ForeignKey(RESTAURANT, models.CASCADE)
     dish_name = models.CharField(max_length = 20)
-
     tag = models.CharField(max_length = 4, default = '', blank = True, null = True)
     price = models.FloatField(blank = True, null = True)
     image = models.ImageField(upload_to='dishes/', height_field=None, width_field=None, max_length=100, default = 'dishes/404.png')

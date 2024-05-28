@@ -1,8 +1,13 @@
 from django.shortcuts import render
-
+from django.views import generic
 # Create your views here.
 from .models import RESTAURANT, DISH
-
+from .forms import AddRestaurantForm,AddDish
+# # 导入模块
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, JsonResponse
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, logout
 def index(request):
     """
     View function for home page of site.
@@ -19,10 +24,38 @@ def index(request):
         context={'num_users':num_users,'num_restaurants':num_restaurants},
     )
 
-from django.views import generic
 
 class RestaurantListView(generic.ListView):
-    model = RESTAURANT
+    template_name = 'restaurant_list.html'
+    context_object_name = 'searchresults'
+    paginate_by = 1
+    def get_queryset(self):
+        searchway = self.request.GET.get('searchway')
+        name = self.request.GET.get('name')
+        
+        if searchway == 'R':
+            queryset = RESTAURANT.objects.all()
+            if name:
+                queryset = queryset.filter(resta_name__icontains=name)
+        elif searchway == 'D':
+            queryset = DISH.objects.all()
+            if name:
+                queryset = queryset.filter(dish_name__icontains=name)
+        else:
+            queryset = RESTAURANT.objects.all()
+            if name:
+                queryset = queryset.filter(resta_name__icontains=name)
+                
+        return queryset
+    
+    def get_template_names(self):
+        '''
+        searchway = self.request.GET.get('searchway')
+        if searchway == 'D':
+            return ['catalog/dish_list.html']
+        '''
+        return ['catalog/restaurant_list.html']
+
 
 class DishListView(generic.ListView):
     model = DISH
@@ -33,11 +66,7 @@ class RestaurantDetailView(generic.DetailView):
 class DishDetailView(generic.DetailView):
     model = DISH
 
-# # 导入模块
-from django.shortcuts import render, redirect
-from django.http import HttpResponse, JsonResponse
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, logout
+
 
 def register(request):
 	if request.method == 'GET':
@@ -72,10 +101,41 @@ def register(request):
 			)
 			user.save()
 			
-			return redirect('index')
+			return redirect('restaurants')
 	
 	else:
 		print('ERROR3')
 		return render(request, "login_fail.html")
 
 
+def addrestaurant(request):
+    """
+    View function for renewing a specific BookInstance by librarian
+    """
+
+    # If this is a POST request then process the Form data
+    if request.method == 'POST':
+        form = AddRestaurantForm(request.POST,request.FILES)
+        # Check if the form is valid:
+        if form.is_valid():
+            # process the data in form.cleaned_data as required (here we just write it to the model due_back field)
+            form.save()  # 保存数据到数据库
+            return redirect('index' )
+            # redirect to a new URL:
+
+
+    # If this is a GET (or any other method) create the default form.
+    else:
+        form = AddRestaurantForm
+    return render(request, 'catalog/addrestaurant.html', {'form': form})
+
+def adddish(request):
+
+    if request.method == 'POST':
+        form = AddDish(request.POST,request.FILES)
+        if form.is_valid():
+            form.save()  
+            return redirect('index' )
+    else:
+        form = AddDish
+    return render(request, 'catalog/addrestaurant.html', {'form': form})
