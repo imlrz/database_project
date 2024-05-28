@@ -7,9 +7,13 @@ body {
     justify-content: center;
 }
 
+.col-sm-10 {
+    margin-top: 150px;
+}
+
 .login {
     background-color: #f8f9fa;
-    width: 400px;
+    width: 500px;
     color: #0b132b;
     padding: 40px;
     box-shadow: 10px 10px 25px #00000080;
@@ -27,7 +31,8 @@ body {
     outline: none;
     color: #0b132b;
 }
-.login input[type="username"], .login input[type="password"] {
+
+.login input[type="username"], .login input[type="text"], .login input[type="password"] {
     border: 2px solid #3498db;
     width: 220px;
 }
@@ -38,7 +43,7 @@ body {
     cursor: pointer;
 }
 
-.login input[type="username"]:focus, .login input[type="password"]:focus {
+.login input[type="username"]:focus, .login input[type="text"]:focus, .login input[type="password"]:focus {
     border-color: #e76f51;
     width: 280px;
     transition: 0.5s;

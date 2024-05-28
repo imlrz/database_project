@@ -74,7 +74,7 @@ class COMMENT(models.Model):
 class REPLY(models.Model):
     reply_ID = models.AutoField(primary_key = True)
     user_ID = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
-    comm_ID = models.ForeignKey(COMMENT, models.CASCADE)
+    comm_ID = models.ForeignKey(COMMENT, related_name = 'replies', on_delete = models.CASCADE)
     content = models.CharField(max_length = 200)
     
     def __str__(self):

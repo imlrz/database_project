@@ -4,7 +4,6 @@
   {% if form.errors %}
     <p>Your username and password didn't match. Please try again.</p>
   {% endif %}
-
   {% if next %}
     {% if user.is_authenticated %}
     <p>Your account doesn't have access to this page. To proceed,
@@ -13,10 +12,9 @@
     <p>Please login to see this page.</p>
     {% endif %}
   {% endif %}
-
   <form method="post" action="{% url 'login' %}" class="login">
     {% csrf_token %}
-
+    <h1>Login 登录</h1>
     <div>
       <td>{{ form.username.label_tag }}</td>
       <td>{{ form.username }}</td>
@@ -34,4 +32,5 @@
 
   {# Assumes you setup the password_reset view in your URLconf #}
   <p><a href="{% url 'password_reset' %}">Lost password?</a></p>
+  <p><a href="{% url 'Registration' %}">No account?</a></p>
 {% endblock %}
