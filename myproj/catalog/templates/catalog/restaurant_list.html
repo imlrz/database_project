@@ -1,37 +1,53 @@
 {% extends "catalog/base_generic_cata.html" %}
 
 {% block content %}
-  <h1>HELLO!</h1>
+    <header>
+        <h1>Restaurant Search</h1>
+        <form method="get">
+            <input type="text" name="q" id="searchBar" placeholder="Search for restaurants or dishes..." value="{{ search_query }}">
+            <select name="sort" id="sortCriteria">
+                <option value="default" {% if sort_by == 'default' %}selected{% endif %}>Sort by</option>
+                <option value="price" {% if sort_by == 'price' %}selected{% endif %}>Price</option>
+                <option value="AVG_grade" {% if sort_by == 'AVG_grade' %}selected{% endif %}>Average Grade</option>
+            </select>
+            <button type="submit">Search</button>
+        </form>
+    </header>
+    <main>
+        <section id="results">
+            {% for restaurant in restaurants %}
+                <div class="restaurant">
+                    <img src="{{ restaurant.image.url }}" alt="{{ restaurant.resta_name }}">
+                    <h2>{{ restaurant.resta_name }}</h2>
+                    <p>Address: {{ restaurant.get_location_display }}</p>
+                    <p>Average Grade: {{ restaurant.AVG_grade }}</p>
+                    <p>More Info: {{ restaurant.more_Info }}</p>
+                    <h3>Dishes:</h3>
+                    <ul>
+                        {% for dish in restaurant.dish_set.all %}
+                            <li>{{ dish.dish_name }} - ${{ dish.price }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </section>
+        <div id="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?q={{ search_query }}&sort={{ sort_by }}&page=1">&laquo; first</a>
+                    <a href="?q={{ search_query }}&sort={{ sort_by }}&page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="?q={{ search_query }}&sort={{ sort_by }}&page={{ page_obj.next_page_number }}">next</a>
+                    <a href="?q={{ search_query }}&sort={{ sort_by }}&page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    </main>
 
-  <form method="GET">
-      <label for="searchway">查询方式</label>
-      <select id="searchway" name="searchway">
-        <option value="R">按照餐馆进行查询</option>
-        <option value="D">按照食品进行查询</option>
-      </select>
-
-      <label for="name">名称:</label>
-      <input type="text" id="name" name="name">
-
-      <button type="submit">Search</button>
-  </form>
-
-  <ul>
-      {% for searchresult in searchresults %}
-        {% if searchresult.resta_name %}
-          <li>
-            <a href="{{ searchresult.get_absolute_url }}">{{ searchresult.resta_name }}</a> ({{ searchresult.location }})
-          </li>
-          <img src="{{ searchresult.image.url }}" alt="{{ searchresult.resta_name }}" style="max-width: 200px; max-height: 200px;">
-        {% elif searchresult.dish_name %}
-          <li>
-            <a href="{{ searchresult.get_absolute_url }}">{{ searchresult.dish_name }}</a>
-          </li>
-          <img src="{{ searchresult.image.url }}" alt="{{ searchresult.dish_name }}" style="max-width: 200px; max-height: 200px;">
-        {% endif %}
-      {% endfor %}
-  </ul>
-  <a href="{% url 'addrestaurant' %}">添加餐厅</a>
 
 {% endblock %}
 

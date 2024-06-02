@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-
+from django.db.models import Q
 from .forms import AddRestaurantForm,AddDish
 # # 导入模块
 from django.shortcuts import render, redirect
@@ -30,35 +30,34 @@ def index(request):
 from django.views import generic
 
 class RestaurantListView(generic.ListView):
-    template_name = 'restaurant_list.html'
-    context_object_name = 'searchresults'
-    paginate_by = 1
-    def get_queryset(self):
-        searchway = self.request.GET.get('searchway')
-        name = self.request.GET.get('name')
+    model = RESTAURANT
+    template_name = 'restaurants/restaurant_list.html'
+    context_object_name = 'restaurants'
+    paginate_by = 5
 
-        if searchway == 'R':
-            queryset = RESTAURANT.objects.all()
-            if name:
-                queryset = queryset.filter(resta_name__icontains=name)
-        elif searchway == 'D':
-            queryset = DISH.objects.all()
-            if name:
-                queryset = queryset.filter(dish_name__icontains=name)
-        else:
-            queryset = RESTAURANT.objects.all()
-            if name:
-                queryset = queryset.filter(resta_name__icontains=name)
+    def get_queryset(self):
+        queryset = RESTAURANT.objects.all()
+        search_query = self.request.GET.get('q', '')
+        sort_by = self.request.GET.get('sort', '')
+
+        if search_query:
+            queryset = queryset.filter(
+                Q(resta_name__icontains=search_query) |
+                Q(dish__dish_name__icontains=search_query)
+            ).distinct()
+
+        if sort_by == 'price':
+            queryset = queryset.order_by('dish__price')
+        elif sort_by == 'AVG_grade':
+            queryset = queryset.order_by('-AVG_grade')
 
         return queryset
 
-    def get_template_names(self):
-        '''
-        searchway = self.request.GET.get('searchway')
-        if searchway == 'D':
-            return ['catalog/dish_list.html']
-        '''
-        return ['catalog/restaurant_list.html']
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('q', '')
+        context['sort_by'] = self.request.GET.get('sort', '')
+        return context
 
 class DishListView(generic.ListView):
     model = DISH

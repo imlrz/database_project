@@ -226,3 +226,19 @@ header h1, header p {
   background-color: #e76f51;
   transition: 0.5s;
 }
+.restaurant {
+  display: flex; /* 使用flex布局 */
+  align-items: center; /* 在交叉轴上居中对齐 */
+  margin-bottom: 20px; /* 设置项目之间的间距 */
+}
+
+.restaurant img {
+  width: 150px; /* 设置图片的固定宽度 */
+  height: auto; /* 让高度自适应 */
+  margin-right: 20px; /* 设置图片与其他信息之间的间距 */
+  align-self: flex-start; /* 图片在交叉轴上顶部对齐 */
+}
+
+.restaurant-details {
+  flex: 1; /* 占据剩余的空间 */
+}
