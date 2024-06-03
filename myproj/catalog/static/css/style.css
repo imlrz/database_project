@@ -226,19 +226,147 @@ header h1, header p {
   background-color: #e76f51;
   transition: 0.5s;
 }
+/* static/css/style.css */
+
+
+
+
+/* static/css/style.css */
+
+header h1 {
+  margin: 0;
+  font-size: 2em;
+}
+
+form {
+  margin-top: 10px;
+}
+
+#searchBar, #sortCriteria, #locationFilter, #isOpenFilter,#tagFilter {
+  width: 20%;
+  padding: 10px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+}
+
+button {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: #ff6347;
+  color: white;
+  cursor: pointer;
+}
+
+main {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
 .restaurant {
-  display: flex; /* 使用flex布局 */
-  align-items: center; /* 在交叉轴上居中对齐 */
-  margin-bottom: 20px; /* 设置项目之间的间距 */
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  width: 80%;
+  margin: 10px 0;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
 }
 
 .restaurant img {
-  width: 150px; /* 设置图片的固定宽度 */
-  height: auto; /* 让高度自适应 */
-  margin-right: 20px; /* 设置图片与其他信息之间的间距 */
-  align-self: flex-start; /* 图片在交叉轴上顶部对齐 */
+  width: 150px;
+  height: auto;
+  border-radius: 5px;
+  margin-right: 20px;
+  align-self: flex-start;
 }
 
 .restaurant-details {
-  flex: 1; /* 占据剩余的空间 */
+  flex: 1;
+}
+
+.restaurant h2 {
+  margin-top: 0;
+  color: #ff6347;
+}
+
+.restaurant p {
+  margin: 5px 0;
+  color: #333;
+}
+
+.dish-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.dish-list li {
+  list-style: none;
+  margin: 10px;
+  text-align: center;
+}
+
+.dish-list img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+#pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+#pagination a {
+  padding: 10px 20px;
+  margin: 0 5px;
+  border: none;
+  border-radius: 5px;
+  background-color: #ff6347;
+  color: white;
+  text-decoration: none;
+}
+
+#pagination span.current {
+  margin: 0 10px;
+  font-size: 1em;
+}
+/* 选择所有 type 属性值为 goto 的 button 元素 */
+button[type="goto"] {
+  height: 30px;
+  width: 150px;
+  border: 2px solid #e76f51;
+  cursor: pointer;
+}
+
+/* 当鼠标悬停在 button 元素上时，应用样式 */
+button[type="goto"]:hover {
+  background-color: #e76f51;
+  transition: background-color 0.5s; /* 添加平滑过渡效果 */
+}
+
+a {
+  color: #858180; /* 使用父元素的颜色 */
+  text-decoration: none; /* 去除下划线 */
+}
+
+/* 可选：定义链接悬停时的样式 */
+a:hover {
+  color: #e76f51; /* 悬停时的颜色 */
+  text-decoration: underline; /* 悬停时是否添加下划线 */
 }

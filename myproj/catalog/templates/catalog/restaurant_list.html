@@ -1,55 +1,71 @@
 {% extends "catalog/base_generic_cata.html" %}
 
 {% block content %}
-    <header>
-        <h1>Restaurant Search</h1>
-        <form method="get">
-            <input type="text" name="q" id="searchBar" placeholder="Search for restaurants or dishes..." value="{{ search_query }}">
-            <select name="sort" id="sortCriteria">
-                <option value="default" {% if sort_by == 'default' %}selected{% endif %}>Sort by</option>
-                <option value="price" {% if sort_by == 'price' %}selected{% endif %}>Price</option>
-                <option value="AVG_grade" {% if sort_by == 'AVG_grade' %}selected{% endif %}>Average Grade</option>
-            </select>
-            <button type="submit">Search</button>
-        </form>
-    </header>
-    <main>
-        <section id="results">
-            {% for restaurant in restaurants %}
-                <div class="restaurant">
+<header>
+    <h1>Restaurant Search</h1>
+    <form method="get">
+        <input type="text" name="q" id="searchBar" placeholder="Search for restaurants or dishes..." value="{{ search_query }}">
+        
+        <select name="location" id="locationFilter">
+            <option value="">All Locations</option>
+            {% for key, value in location_choices %}
+                <option value="{{ key }}" {% if location == key %}selected{% endif %}>{{ value }}</option>
+            {% endfor %}
+        </select>
+        <select name="tag" id="tagFilter">
+            <option value="">All Tag</option>
+            {% for key, value in tag_choices %}
+                <option value="{{ key }}" {% if tag == key %}selected{% endif %}>{{ value }}</option>
+            {% endfor %}
+        </select>
+
+        
+        <button type="submit">Search</button>
+    </form>
+</header>
+<main>
+    <section id="results">
+        {% for restaurant in restaurants %}
+            <div class="restaurant">
+                <a href="{{ restaurant.get_absolute_url }}">
                     <img src="{{ restaurant.image.url }}" alt="{{ restaurant.resta_name }}">
-                    <h2>{{ restaurant.resta_name }}</h2>
+                </a>
+                <div class="restaurant-details">
+                    <h2><a href="{{ restaurant.get_absolute_url }}">{{ restaurant.resta_name }}</a></h2>
                     <p>Address: {{ restaurant.get_location_display }}</p>
                     <p>Average Grade: {{ restaurant.AVG_grade }}</p>
                     <p>More Info: {{ restaurant.more_Info }}</p>
                     <h3>Dishes:</h3>
-                    <ul>
-                        {% for dish in restaurant.dish_set.all %}
-                            <li>{{ dish.dish_name }} - ${{ dish.price }}</li>
+                    <ul class="dish-list">
+                        {% for dish in restaurant.filtered_dishes %}
+                            <li>
+                                <a href="{{ dish.get_absolute_url }}"><img src="{{ dish.image.url }}" alt="{{ dish.dish_name }}"></a>
+                                <p>{{ dish.dish_name }} - ${{ dish.price }}</p>
+                            </li>
                         {% endfor %}
                     </ul>
                 </div>
-            {% endfor %}
-        </section>
-        <div id="pagination">
-            <span class="step-links">
-                {% if page_obj.has_previous %}
-                    <a href="?q={{ search_query }}&sort={{ sort_by }}&page=1">&laquo; first</a>
-                    <a href="?q={{ search_query }}&sort={{ sort_by }}&page={{ page_obj.previous_page_number }}">previous</a>
-                {% endif %}
-                <span class="current">
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
-                </span>
-                {% if page_obj.has_next %}
-                    <a href="?q={{ search_query }}&sort={{ sort_by }}&page={{ page_obj.next_page_number }}">next</a>
-                    <a href="?q={{ search_query }}&sort={{ sort_by }}&page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
-                {% endif %}
+            </div>
+        {% endfor %}
+    </section>
+    <div id="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?q={{ search_query }}&location={{ location }}&isopen={{ isopen }}&sort={{ sort_by }}&page=1">&laquo; first</a>
+                <a href="?q={{ search_query }}&location={{ location }}&isopen={{ isopen }}&sort={{ sort_by }}&page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
             </span>
-        </div>
-    </main>
-
-
+            {% if page_obj.has_next %}
+                <a href="?q={{ search_query }}&location={{ location }}&isopen={{ isopen }}&sort={{ sort_by }}&page={{ page_obj.next_page_number }}">next</a>
+                <a href="?q={{ search_query }}&location={{ location }}&isopen={{ isopen }}&sort={{ sort_by }}&page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+</main>
 {% endblock %}
+
 
 
 

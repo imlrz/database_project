@@ -1,15 +1,18 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from .forms import AddRestaurantForm,AddDish
+from .forms import AddRestaurantForm,AddDish,ApplyRestaurantForm
 # # 导入模块
+from django.utils import timezone
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, logout
-
+from django.contrib.auth import authenticate, logout, login
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.core.exceptions import PermissionDenied
+from django.views import generic
 # Create your views here.
-from .models import RESTAURANT, DISH, COMMENT, REPLY
+from .models import RESTAURANT, DISH, COMMENT, REPLY, DELETE_RESTA
 
 def index(request):
     """
@@ -19,46 +22,63 @@ def index(request):
     num_users=0
     # Available books (status = 'a')
     num_restaurants=RESTAURANT.objects.count()  # The 'all()' is implied by default.
-
+    managers = User.objects.all()  # 假设所有用户都是经理
     # Render the HTML template index.html with the data in the context variable
     return render(
         request,
         'index.html',
-        context={'num_users':num_users,'num_restaurants':num_restaurants},
+        context={'managers': managers,'num_users':num_users,'num_restaurants':num_restaurants},
     )
 
-from django.views import generic
+
 
 class RestaurantListView(generic.ListView):
     model = RESTAURANT
-    template_name = 'restaurants/restaurant_list.html'
+    template_name = 'catalog/restaurant_list.html'
     context_object_name = 'restaurants'
-    paginate_by = 5
+    paginate_by = 10
 
     def get_queryset(self):
-        queryset = RESTAURANT.objects.all()
-        search_query = self.request.GET.get('q', '')
-        sort_by = self.request.GET.get('sort', '')
-
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('q')
+        location = self.request.GET.get('location')
+        tag = self.request.GET.get('tag')
+        current_time = timezone.now().time()
+        # Filter by current time within time_open and time_close
+        queryset = queryset.filter(
+            Q(time_open__lte=current_time, time_close__gte=current_time) |
+            Q(time_open__isnull=True) | Q(time_close__isnull=True)
+        )
         if search_query:
             queryset = queryset.filter(
                 Q(resta_name__icontains=search_query) |
                 Q(dish__dish_name__icontains=search_query)
             ).distinct()
 
-        if sort_by == 'price':
-            queryset = queryset.order_by('dish__price')
-        elif sort_by == 'AVG_grade':
-            queryset = queryset.order_by('-AVG_grade')
+        if location:
+            queryset = queryset.filter(location=location)
+        if tag:
+            queryset = queryset.filter(tag=tag)
 
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('q', '')
-        context['sort_by'] = self.request.GET.get('sort', '')
+        context['location'] = self.request.GET.get('location', '')
+        context['location_choices'] = RESTAURANT.location_choice
+        context['tag'] = self.request.GET.get('tag', '')
+        context['tag_choices'] = RESTAURANT.tag_choice
+        # Adding filtered dishes to each restaurant
+        search_query = self.request.GET.get('q', '')
+        if search_query:
+            for restaurant in context['restaurants']:
+                restaurant.filtered_dishes = restaurant.dish_set.filter(dish_name__icontains=search_query)
+        else:
+            for restaurant in context['restaurants']:
+                restaurant.filtered_dishes = restaurant.dish_set.all()
+        
         return context
-
 class DishListView(generic.ListView):
     model = DISH
 
@@ -68,9 +88,18 @@ class RestaurantDetailView(generic.DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # 获取相关信息
-        context['restaurant_dishes'] = DISH.objects.filter(resta_ID = self.object.resta_ID)
+        context['restaurant_dishes'] = DISH.objects.filter(resta_ID=self.object.resta_ID, onsale=True)
         context['restaurant_comments_and_replies'] = COMMENT.objects.filter(resta_ID = self.object.resta_ID).prefetch_related('replies')
+        # 添加用户权限信息到上下文
+        restaurant = self.get_object()
+        context['can_edit'] = restaurant.manager is None or self.request.user == restaurant.manager
         return context
+
+    def test_func(self):
+        restaurant = self.get_object()
+        if restaurant.manager is None:
+            return self.request.user.is_authenticated
+        return self.request.user == restaurant.manager    
 
 class DishDetailView(generic.DetailView):
     model = DISH
@@ -79,8 +108,14 @@ class DishDetailView(generic.DetailView):
         context = super().get_context_data(**kwargs)
         # 获取相关信息
         context['dish_comments_and_replies'] = COMMENT.objects.filter(dish_ID = self.object.dish_ID).prefetch_related('replies')
+        dish = self.get_object()
+        context['can_edit'] = dish.resta_ID.manager is None or self.request.user == dish.resta_ID.manager
         return context
-
+    def test_func(self):
+        restaurant = self.get_object()
+        if restaurant.manager is None:
+            return self.request.user.is_authenticated
+        return self.request.user == restaurant.manager
 # # 导入模块
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
@@ -100,14 +135,12 @@ def register(request):
 		pwd = request.POST.get('password')
 		
 		if not user_name or not pwd:
-			print('ERROR0')
-			return render(request, "login_fail.html")
+			return render(request, 'registration/register.html', {'errors': ['请将信息填写完整']})
+			
 
 		# 用户已存在
 		if User.objects.filter(username=user_name):
-			print('ERROR1')
-			return render(request, "login_fail.html")
-		# 用户不存在
+			return render(request, 'registration/register.html', {'errors': ['该昵称已存在，请换一个昵称']})
 		else:
 			# 使用User内置方法创建用户
 			user = User.objects.create_user(
@@ -123,19 +156,21 @@ def register(request):
 			return redirect('restaurants')
 	
 	else:
-		print('ERROR3')
-		return render(request, "login_fail.html")
+		return render(
+			request,
+			'registration/register.html'
+		)
 	
 
 from django.urls import reverse
-
+@login_required
 def adddishes_form(request):
     if request.method == 'POST':
         resta_ID = request.POST.get('resta_ID')
         # 重定向到表单页面并传递主码
         return redirect(reverse('adddishes') + f'?resta_ID={resta_ID}')
     return render(request, 'catalog/restaurant_detail.html')
-
+@login_required
 def adddishes(request):
     if request.method == 'POST':
         resta_ID = request.POST.get('resta_ID')
@@ -146,13 +181,19 @@ def adddishes(request):
 
         # 处理表单数据
         if not resta_ID or not dish_name:
-            print('ERROR0: Missing required fields')
-            return render(request, "login_fail.html")
+            return render(request, 'catalog/add_dishes.html', {'errors': ['餐厅与菜名必填']})
+        if not image:
+             image = 'dishes/404.png'
 
-        # 用户已存在
+        # 菜品已存在
         if DISH.objects.filter(resta_ID=resta_ID, dish_name=dish_name).exists():
-            print('ERROR1: Dish already exists')
-            return render(request, "login_fail.html")
+            return render(request, 'catalog/add_dishes.html', {'errors': ['菜品已存在']})
+
+        restaurant = RESTAURANT.objects.get(resta_ID=resta_ID)
+
+        # 权限检查
+        if restaurant.manager is not None and request.user != restaurant.manager:
+            raise PermissionDenied
 
         # 尝试保存新菜品
         if 1:
@@ -195,6 +236,11 @@ def editrestaurants(request, pk):
         image = request.FILES.get('image') if 'image' in request.FILES else None
         isopen = request.POST.get('isopen') == 'on'
 
+        restaurant = RESTAURANT.objects.get(resta_ID=pk)
+
+        # 权限检查
+        if restaurant.manager is not None and request.user != restaurant.manager:
+            raise PermissionDenied
         # 更新餐厅信息
         restaurant.resta_name = resta_name
         restaurant.location = location
@@ -239,7 +285,7 @@ def add_comment(request, pk):
 
         # Check for valid inputs
         if not grade or not content:
-            return render(request, 'catalog/add_comment.html', {'restaurant': restaurant, 'dishes': dishes, 'error': 'Grade and content are required.'})
+            return render(request, 'catalog/add_comment.html', {'restaurant': restaurant, 'dishes': dishes, 'errors': ['评分与内容均不能为空']})
 
         # Create and save the comment
         comment = COMMENT(
@@ -253,6 +299,28 @@ def add_comment(request, pk):
         return redirect('restaurant-detail', pk=restaurant.pk)
 
     return render(request, 'catalog/add_comment.html', {'restaurant': restaurant, 'dishes': dishes})
+
+@login_required
+def add_reply(request, pk):
+    comment = get_object_or_404(COMMENT, pk=pk)
+
+    if request.method == 'POST':
+        content = request.POST.get('content')
+
+        # Check for valid inputs
+        if not content:
+            return render(request, 'catalog/add_comment.html', {'comment': comment, 'errors': ['内容不能为空']})
+
+        # Create and save the comment
+        reply = REPLY(
+            user_ID=request.user,
+            comm_ID=comment,
+            content=content
+        )
+        reply.save()
+        return redirect('restaurant-detail', pk=comment.resta_ID.pk)
+
+    return render(request, 'catalog/add_reply.html', {'comment': comment})
 
 def addrestaurant(request):
     """
@@ -275,6 +343,225 @@ def addrestaurant(request):
         form = AddRestaurantForm
     return render(request, 'catalog/addrestaurant.html', {'form': form})
 
+
+def managerlogin(request):
+	if request.method == 'GET':
+		return render(
+			request,
+			'registration/managerlogin.html'
+		)
+
+	elif request.method == 'POST':
+		# 获取参数
+		user_name = request.POST.get('username')
+		pwd = request.POST.get('password')
+
+		if not user_name or not pwd:
+			return render(request, 'registration/managerlogin.html', {'errors': ['请将信息填写完整']})
+
+		# 用户不存在
+		if not User.objects.filter(username=user_name):
+			return render(request, 'registration/managerlogin.html', {'errors': ['用户不存在']})
+
+		# 用户存在但非经理
+		for auser in User.objects.filter(username=user_name):
+			if auser.is_staff == 0:
+				return render(request, 'registration/managerlogin.html', {'errors': ['您不是经理']})
+
+        # 认证
+		user = authenticate(request, username=user_name, password=pwd)
+		if user is not None:
+			login(request, user)
+            # Redirect to a success page.
+			return redirect('restaurants')
+		else:
+			return render(request, 'registration/managerlogin.html', {'errors': ['密码错误']})
+	else:
+		return render(request, "login_fail.html")
+
+
+@login_required
+def editdishes(request, pk):
+    dish = get_object_or_404(DISH, pk=pk)
+    if request.method == 'POST':
+        dish_name = request.POST.get('dish_name')
+        price_c = request.POST.get('price')
+        more_Info = request.POST.get('moreinfo')
+        image = request.FILES.get('image')
+
+        dish = DISH.objects.get(dish_ID=pk)
+
+        # 权限检查
+        if dish.resta_ID.manager is not None and request.user != dish.resta_ID.manager:
+            raise PermissionDenied
+
+        # 更新餐厅信息
+        dish.dish_name = dish_name
+        dish.price = price_c
+        dish.more_Info = more_Info
+        if image:
+            dish.image = image
+
+        try:
+            dish.full_clean()  # 验证字段
+            dish.save()
+            return redirect('dish-detail', pk=dish.dish_ID)
+        except ValidationError as e:
+            print(f'ERROR: Validation error - {e}')
+            return render(request, "catalog/edit_dishes.html", {'dish': dish, 'errors': e.messages})
+        except IntegrityError as e:
+            print(f'ERROR: Integrity error - {e}')
+            return render(request, "catalog/edit_dishes.html", {'dish': dish, 'errors': [str(e)]})
+        except Exception as e:
+            print(f'ERROR: {e}')
+            return render(request, "catalog/edit_dishes.html", {'dish': dish, 'errors': [str(e)]})
+
+    return render(request, 'catalog/edit_dishes.html', {'dish': dish})
+
+
+@login_required
+def add_comment_dish(request, pk):
+    dish = get_object_or_404(DISH, pk=pk)
+
+    if request.method == 'POST':
+        grade = request.POST.get('grade')
+        content = request.POST.get('content')
+
+        # Check for valid inputs
+        if not grade or not content:
+            return render(request, 'catalog/add_comment_dish.html', {'dish': dish, 'errors': ['评分与内容均不能为空']})
+
+        # Create and save the comment
+        comment = COMMENT(
+            user_ID=request.user,
+            resta_ID=dish.resta_ID,
+            dish_ID=dish,
+            grade=grade,
+            content=content
+        )
+        comment.save()
+        return redirect('dish-detail', pk=dish.pk)
+
+    return render(request, 'catalog/add_comment_dish.html', {'dish': dish})
+
+
+@login_required
+def add_reply_dish(request, pk):
+    comment = get_object_or_404(COMMENT, pk=pk)
+
+    if request.method == 'POST':
+        content = request.POST.get('content')
+
+        # Check for valid inputs
+        if not content:
+            return render(request, 'catalog/add_reply.html', {'comment': comment, 'errors': ['内容不能为空']})
+
+        # Create and save the comment
+        reply = REPLY(
+            user_ID=request.user,
+            comm_ID=comment,
+            content=content
+        )
+        reply.save()
+        return redirect('dish-detail', pk=comment.dish_ID.pk)
+
+    return render(request, 'catalog/add_reply.html', {'comment': comment})
+
+
+@login_required
+def deleterestaurants(request, pk):
+    restaurant = get_object_or_404(RESTAURANT, pk=pk)
+    if request.method == 'POST':
+        image = request.FILES.get('image')
+
+        # 图片不能为空
+        if not image:
+            return render(request, "login_fail.html", {'errors': ['证据不能为空']})
+
+        # 更新餐厅信息
+        delete_Info = DELETE_RESTA(
+             resta_ID = restaurant,
+             evidence = image
+        )
+        try:
+            delete_Info.full_clean()  # 验证字段
+            delete_Info.save()
+            return redirect('restaurant-detail', pk=pk)
+        except ValidationError as e:
+            print(f'ERROR: Validation error - {e}')
+            return render(request, "catalog/delete_restaurants.html", {'restaurant': restaurant, 'errors': e.messages})
+        except IntegrityError as e:
+            print(f'ERROR: Integrity error - {e}')
+            return render(request, "catalog/delete_restaurants.html", {'restaurant': restaurant, 'errors': [str(e)]})
+        except Exception as e:
+            print(f'ERROR: {e}')
+            return render(request, "catalog/delete_restaurants.html", {'restaurant': restaurant, 'errors': [str(e)]})
+
+    return render(request, 'catalog/delete_restaurants.html', {'restaurant': restaurant})
+
+
+@login_required
+def deletedishes(request, pk):
+    if request.method == 'POST':
+        dish = get_object_or_404(DISH, pk=pk)
+        dish.onsale = False
+        dish.full_clean()  # 验证字段
+        dish.save()
+        return redirect('restaurant-detail', pk=dish.resta_ID.pk)
+    '''
+        except ValidationError as e:
+            print(f'ERROR: Validation error - {e}')
+            return redirect('dish-detail', pk=pk)
+        except IntegrityError as e:
+            print(f'ERROR: Integrity error - {e}')
+            return redirect('dish-detail', pk=pk)
+        except Exception as e:
+            print(f'ERROR: {e}')
+            return redirect('dish-detail', pk=pk)
+    '''
+    return redirect('deletedishes', pk=pk)
+
+
+def register_manager(request):
+	if request.method == 'GET':
+		return render(
+			request,
+			'registration/register_manager.html'
+		)
+
+	elif request.method == 'POST':
+		# 获取参数
+		user_name = request.POST.get('username')
+		pwd = request.POST.get('password')
+
+		if not user_name or not pwd:
+			return render(request, 'registration/register_manager.html', {'errors': ['请将信息填写完整']})
+
+		# 用户已存在
+		if User.objects.filter(username=user_name):
+			return render(request, 'registration/register_manager.html', {'errors': ['该昵称已存在，请换一个昵称']})
+
+        # 用户不存在
+		else:
+			# 使用User内置方法创建用户
+			user = User.objects.create_user(
+				username=user_name,
+				password=pwd,
+				email='123@qq.com',
+				is_staff=1,
+				is_active=1,
+				is_superuser=0
+			)
+			user.save()
+
+			return redirect('restaurants')
+
+	else:
+		return render(
+			request,
+			'registration/register_manager.html'
+		)
+
 def adddish(request):
 
     if request.method == 'POST':
@@ -285,3 +572,32 @@ def adddish(request):
     else:
         form = AddDish
     return render(request, 'catalog/addrestaurant.html', {'form': form})
+def manager(request, pk):
+    manager = get_object_or_404(User, pk=pk)
+    restaurants = RESTAURANT.objects.filter(manager=manager)
+    context = {
+        'manager': manager,
+        'restaurants': restaurants
+    }
+    return render(request, 'catalog/manager.html', context)
+
+def applyrestaurant(request):
+    """
+    View function for renewing a specific BookInstance by librarian
+    """
+
+    # If this is a POST request then process the Form data
+    if request.method == 'POST':
+        form = ApplyRestaurantForm(request.POST,request.FILES)
+        # Check if the form is valid:
+        if form.is_valid():
+            # process the data in form.cleaned_data as required (here we just write it to the model due_back field)
+            form.save()  # 保存数据到数据库
+            return redirect('index' )
+            # redirect to a new URL:
+
+
+    # If this is a GET (or any other method) create the default form.
+    else:
+        form = ApplyRestaurantForm
+    return render(request, 'catalog/applyrestaurant.html', {'form': form})
