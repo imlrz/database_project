@@ -226,3 +226,29 @@ header h1, header p {
   background-color: #e76f51;
   transition: 0.5s;
 }
+
+/* 选择所有 type 属性值为 goto 的 button 元素 */
+button[type="goto"] {
+  height: 30px;
+  width: 150px;
+  border: 2px solid #e76f51;
+  cursor: pointer;
+}
+
+/* 当鼠标悬停在 button 元素上时，应用样式 */
+button[type="goto"]:hover {
+  background-color: #e76f51;
+  transition: background-color 0.5s; /* 添加平滑过渡效果 */
+}
+
+a {
+  color: #858180; /* 使用父元素的颜色 */
+  text-decoration: none; /* 去除下划线 */
+}
+
+/* 可选：定义链接悬停时的样式 */
+a:hover {
+  color: #e76f51; /* 悬停时的颜色 */
+  text-decoration: underline; /* 悬停时是否添加下划线 */
+}
+
