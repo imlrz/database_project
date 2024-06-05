@@ -33,7 +33,7 @@
                 <div class="restaurant-details">
                     <h2><a href="{{ restaurant.get_absolute_url }}">{{ restaurant.resta_name }}</a></h2>
                     <p>Address: {{ restaurant.get_location_display }}</p>
-                    <p>Average Grade: {{ restaurant.AVG_grade }}</p>
+                    <p>Average Grade: {{ restaurant.AVG_grade|floatformat:2 }}</p>
                     <p>More Info: {{ restaurant.more_Info }}</p>
                     <h3>Dishes:</h3>
                     <ul class="dish-list">
