@@ -53,3 +53,19 @@ body {
     background-color: #e76f51;
     transition: 0.5s;
 }
+
+.error-messages {
+    border: 1px solid #e74c3c;
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+.error-messages ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+.error-messages li {
+    margin: 5px 0;
+}
