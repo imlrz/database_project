@@ -18,17 +18,10 @@ def index(request):
     """
     View function for home page of site.
     """
-    # Generate counts of some of the main objects
-    num_users=0
-    # Available books (status = 'a')
-    num_restaurants=RESTAURANT.objects.count()  # The 'all()' is implied by default.
-    managers = User.objects.all()  # 假设所有用户都是经理
-    # Render the HTML template index.html with the data in the context variable
-    return render(
-        request,
-        'index.html',
-        context={'managers': managers,'num_users':num_users,'num_restaurants':num_restaurants},
-    )
+    if request.user.is_authenticated and request.user.is_staff == True:
+        return redirect('manager', pk=request.user.pk)
+    else:
+        return redirect('restaurants')
 
 
 
@@ -373,7 +366,7 @@ def managerlogin(request):
 		if user is not None:
 			login(request, user)
             # Redirect to a success page.
-			return redirect('restaurants')
+			return redirect('manager', pk=user.pk)
 		else:
 			return render(request, 'registration/managerlogin.html', {'errors': ['密码错误']})
 	else:
@@ -572,6 +565,7 @@ def adddish(request):
     else:
         form = AddDish
     return render(request, 'catalog/addrestaurant.html', {'form': form})
+
 def manager(request, pk):
     manager = get_object_or_404(User, pk=pk)
     restaurants = RESTAURANT.objects.filter(manager=manager)

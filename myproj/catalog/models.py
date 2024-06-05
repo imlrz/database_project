@@ -41,6 +41,7 @@ class DISH(models.Model):
     image = models.ImageField(upload_to='dishes/', height_field=None, width_field=None, max_length=100, default = 'dishes/404.png')
     onsale = models.BooleanField(default = True)
     more_Info = models.CharField(max_length = 200, blank = True, null = True)
+    AVG_grade = models.FloatField(blank = True, null = True)
 
     class Meta:
         # 在多个字段上设置复合的唯一约束

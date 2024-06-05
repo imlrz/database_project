@@ -346,11 +346,18 @@ main {
   margin: 0 10px;
   font-size: 1em;
 }
+
 /* 选择所有 type 属性值为 goto 的 button 元素 */
 button[type="goto"] {
+  padding: 0;
+  border: none;
+  border-radius: 5px;
   height: 30px;
   width: 150px;
+  color:#212529;
+  align-items:center;
   border: 2px solid #e76f51;
+  background-color: #f1e9e6;
   cursor: pointer;
 }
 

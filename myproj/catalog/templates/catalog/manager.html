@@ -33,15 +33,17 @@
     <h1>{{ manager.username }}'s Restaurants</h1>
     <ul>
         {% for restaurant in restaurants %}
-            <li>
-                <h2>{{ restaurant.resta_name }}</h2>
-                <p>Location: {{ restaurant.get_location_display }}</p>
-                <p>Open: {{ restaurant.time_open }} - Close: {{ restaurant.time_close }}</p>
-                <p>Average Grade: {{ restaurant.AVG_grade }}</p>
-                <p>More Info: {{ restaurant.more_Info }}</p>
+        <div class="restaurant">
+            <a href="{{ restaurant.get_absolute_url }}">
                 <img src="{{ restaurant.image.url }}" alt="{{ restaurant.resta_name }}">
-                <p>Is Open: {{ restaurant.isopen }}</p>
-            </li>
+            </a>
+            <div class="restaurant-details">
+                <h2><a href="{{ restaurant.get_absolute_url }}">{{ restaurant.resta_name }}</a></h2>
+                <p>Address: {{ restaurant.get_location_display }}</p>
+                <p>Average Grade: {{ restaurant.AVG_grade|floatformat:2 }}</p>
+                <p>More Info: {{ restaurant.more_Info }}</p>
+            </div>
+        </div>
         {% endfor %}
     </ul>
     <a href="{% url 'applyrestaurant' %}"  class="plus-button">申请餐厅</a>
