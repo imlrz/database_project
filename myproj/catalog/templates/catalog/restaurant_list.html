@@ -1,4 +1,30 @@
 {% extends "catalog/base_generic_cata.html" %}
+{% block style %}
+<link rel="stylesheet" href="../../static/css/style.css" />
+<style>
+button {
+    top: 50%;
+    background-color: #0a0a23;
+    color: #fff;
+    border: none; 
+    border-radius: 10px; 
+    padding: 15px;
+    min-height: 30px; 
+    min-width: 120px;
+} 
+.button:focus {
+    outline-color: transparent;
+    outline-style: solid;
+    box-shadow: 0 0 0 4px #5a01a7;
+    transition: 0.7s;
+}
+.button:active {
+    background-color: #ffbf00;
+}
+</style>
+
+{% endblock %}
+
 
 {% block content %}
 <header>
@@ -20,10 +46,16 @@
         </select>
 
         
-        <button type="submit">Search</button>
+        <button type="submit" class="button">Search</button>
+        {% if user.is_staff%}
+        <a href="{% url 'manager' user.pk %}">
+            <button type="button" class="button">管理餐厅</button>
+        </a>
+        {% endif %}
     </form>
 </header>
 <main>
+    
     <section id="results">
         {% for restaurant in restaurants %}
             <div class="restaurant">
