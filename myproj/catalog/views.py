@@ -13,6 +13,9 @@ from django.core.exceptions import PermissionDenied
 from django.views import generic
 # Create your views here.
 from .models import RESTAURANT, DISH, COMMENT, REPLY, DELETE_RESTA
+from zoneinfo import ZoneInfo
+
+
 
 def index(request):
     """
@@ -43,7 +46,9 @@ class RestaurantListView(generic.ListView):
         search_query = self.request.GET.get('q')
         location = self.request.GET.get('location')
         tag = self.request.GET.get('tag')
-        current_time = timezone.now().time()
+        # 使用ZoneInfo获取上海时区
+        shanghai_timezone = ZoneInfo('Asia/Shanghai')
+        current_time = timezone.now().astimezone(shanghai_timezone)
         # Filter by current time within time_open and time_close
         queryset = queryset.filter(
             Q(time_open__lte=current_time, time_close__gte=current_time) |
@@ -73,10 +78,11 @@ class RestaurantListView(generic.ListView):
         search_query = self.request.GET.get('q', '')
         if search_query:
             for restaurant in context['restaurants']:
-                restaurant.filtered_dishes = restaurant.dish_set.filter(dish_name__icontains=search_query)
+                restaurant.filtered_dishes = restaurant.dish_set.filter(dish_name__icontains=search_query,onsale=True)
         else:
             for restaurant in context['restaurants']:
-                restaurant.filtered_dishes = restaurant.dish_set.all()
+                restaurant.filtered_dishes = restaurant.dish_set.filter(onsale=True)
+
         
         return context
 class DishListView(generic.ListView):
@@ -572,6 +578,7 @@ def adddish(request):
     else:
         form = AddDish
     return render(request, 'catalog/addrestaurant.html', {'form': form})
+@login_required
 def manager(request, pk):
     manager = get_object_or_404(User, pk=pk)
     restaurants = RESTAURANT.objects.filter(manager=manager)
@@ -580,7 +587,7 @@ def manager(request, pk):
         'restaurants': restaurants
     }
     return render(request, 'catalog/manager.html', context)
-
+@login_required
 def applyrestaurant(request):
     """
     View function for renewing a specific BookInstance by librarian
