@@ -13,6 +13,13 @@ from django.core.exceptions import PermissionDenied
 from django.views import generic
 # Create your views here.
 from .models import RESTAURANT, DISH, COMMENT, REPLY, DELETE_RESTA
+from zoneinfo import ZoneInfo
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponseForbidden
+from django.contrib.auth.decorators import login_required
+
+
+
 
 def index(request):
     """
@@ -30,20 +37,79 @@ def index(request):
         context={'managers': managers,'num_users':num_users,'num_restaurants':num_restaurants},
     )
 
-
-
 class RestaurantListView(generic.ListView):
     model = RESTAURANT
     template_name = 'catalog/restaurant_list.html'
     context_object_name = 'restaurants'
-    paginate_by = 10
+    paginate_by = 3
 
     def get_queryset(self):
         queryset = super().get_queryset()
         search_query = self.request.GET.get('q')
         location = self.request.GET.get('location')
         tag = self.request.GET.get('tag')
-        current_time = timezone.now().time()
+        # 使用ZoneInfo获取上海时区
+        shanghai_timezone = ZoneInfo('Asia/Shanghai')
+        current_time = timezone.now().astimezone(shanghai_timezone)
+        # Filter by current time within time_open and time_close
+        queryset = queryset.filter(
+            Q(time_open__lte=current_time, time_close__gte=current_time) |
+            Q(time_open__isnull=True) | Q(time_close__isnull=True)
+        )
+        queryset = queryset.filter(isopen=True)
+        if search_query:
+            queryset = queryset.filter(
+                Q(resta_name__icontains=search_query) |
+                Q(dish__dish_name__icontains=search_query) |
+                Q(more_Info__icontains=search_query)
+            ).distinct()
+        queryset = queryset.order_by('-AVG_grade')
+        if location:
+            queryset = queryset.filter(location=location)
+        if tag:
+            queryset = queryset.filter(tag=tag)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        search_query = self.request.GET.get('q', '')
+        context['search_query'] = search_query
+        context['location'] = self.request.GET.get('location', '')
+        context['location_choices'] = RESTAURANT.location_choice
+        context['tag'] = self.request.GET.get('tag', '')
+        context['tag_choices'] = RESTAURANT.tag_choice
+
+        if search_query:
+            for restaurant in context['restaurants']:
+                if search_query.lower() in restaurant.resta_name.lower() or search_query.lower() in restaurant.more_Info.lower():
+                    # 搜索内容是餐厅名称时，显示最多5个菜品
+                    restaurant.filtered_dishes = restaurant.dish_set.filter(onsale=True)[:5]
+                else:
+                    # 否则，显示匹配搜索内容的菜品
+                    restaurant.filtered_dishes = restaurant.dish_set.filter(dish_name__icontains=search_query, onsale=True)[:5]
+        else:
+            # 没有搜索内容时，显示在售的菜品（最多五个）
+            for restaurant in context['restaurants']:
+                restaurant.filtered_dishes = restaurant.dish_set.filter(onsale=True)[:5]
+
+        return context
+
+'''
+class RestaurantListView(generic.ListView):
+    model = RESTAURANT
+    template_name = 'catalog/restaurant_list.html'
+    context_object_name = 'restaurants'
+    paginate_by = 3
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.GET.get('q')
+        location = self.request.GET.get('location')
+        tag = self.request.GET.get('tag')
+        # 使用ZoneInfo获取上海时区
+        shanghai_timezone = ZoneInfo('Asia/Shanghai')
+        current_time = timezone.now().astimezone(shanghai_timezone)
         # Filter by current time within time_open and time_close
         queryset = queryset.filter(
             Q(time_open__lte=current_time, time_close__gte=current_time) |
@@ -54,7 +120,7 @@ class RestaurantListView(generic.ListView):
                 Q(resta_name__icontains=search_query) |
                 Q(dish__dish_name__icontains=search_query)
             ).distinct()
-
+        queryset = queryset.order_by('-AVG_grade')
         if location:
             queryset = queryset.filter(location=location)
         if tag:
@@ -73,12 +139,14 @@ class RestaurantListView(generic.ListView):
         search_query = self.request.GET.get('q', '')
         if search_query:
             for restaurant in context['restaurants']:
-                restaurant.filtered_dishes = restaurant.dish_set.filter(dish_name__icontains=search_query)
+                restaurant.filtered_dishes = restaurant.dish_set.filter(dish_name__icontains=search_query,onsale=True)
         else:
             for restaurant in context['restaurants']:
-                restaurant.filtered_dishes = restaurant.dish_set.all()
+                restaurant.filtered_dishes = restaurant.dish_set.filter(onsale=True)
+
         
         return context
+'''
 class DishListView(generic.ListView):
     model = DISH
 
@@ -322,6 +390,7 @@ def add_reply(request, pk):
 
     return render(request, 'catalog/add_reply.html', {'comment': comment})
 
+@login_required
 def addrestaurant(request):
     """
     View function for renewing a specific BookInstance by librarian
@@ -571,9 +640,14 @@ def adddish(request):
             return redirect('index' )
     else:
         form = AddDish
-    return render(request, 'catalog/addrestaurant.html', {'form': form})
+    return render(request, 'catalog/adddish.html', {'form': form})
+@login_required
 def manager(request, pk):
     manager = get_object_or_404(User, pk=pk)
+    # 检查当前用户是否是指定的manager
+    if request.user != manager:
+        # 渲染自定义的403页面
+        return render(request, 'catalog/403.html')
     restaurants = RESTAURANT.objects.filter(manager=manager)
     context = {
         'manager': manager,
@@ -581,23 +655,15 @@ def manager(request, pk):
     }
     return render(request, 'catalog/manager.html', context)
 
+@login_required
 def applyrestaurant(request):
-    """
-    View function for renewing a specific BookInstance by librarian
-    """
-
-    # If this is a POST request then process the Form data
     if request.method == 'POST':
-        form = ApplyRestaurantForm(request.POST,request.FILES)
-        # Check if the form is valid:
+        form = ApplyRestaurantForm(request.POST, request.FILES)
         if form.is_valid():
-            # process the data in form.cleaned_data as required (here we just write it to the model due_back field)
-            form.save()  # 保存数据到数据库
+            manager_reg = form.save(commit=False)
+            manager_reg.user_ID = request.user  # 设置 user_ID 为当前登录用户
+            manager_reg.save()
             return redirect('index' )
-            # redirect to a new URL:
-
-
-    # If this is a GET (or any other method) create the default form.
     else:
-        form = ApplyRestaurantForm
+        form = ApplyRestaurantForm()
     return render(request, 'catalog/applyrestaurant.html', {'form': form})
